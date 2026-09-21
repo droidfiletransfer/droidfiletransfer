@@ -4,7 +4,6 @@
 @font-face {
   font-family: "Material Symbols Outlined";
   font-style: normal;
-  font-weight: 200 400;
   font-display: block;
   src: url(/fonts/MaterialSymbolsOutlined-subset.woff2) format("woff2");
 }
@@ -17,23 +16,34 @@
   src: url(/fonts/Figtree-VariableFont_wght.woff2) format("woff2");
 }
 .material-symbols {
-  font-family: "Material Symbols Outlined";
+  font-family: "Material Symbols Outlined" !important;
   font-weight: normal;
   font-style: normal;
-  line-height: 1;
-  letter-spacing: normal;
-  text-transform: none;
   display: inline-block;
-  white-space: nowrap;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
   word-wrap: normal;
+  white-space: nowrap;
   direction: ltr;
-  font-variation-settings: "FILL" 0;
-  -webkit-font-feature-settings: "liga";
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 24 !important;
+  /* Fixes blurry icons on macOS (Safari and Chrome). */
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   user-select: none;
 }
-.material-symbols.fill {
-  font-variation-settings: "FILL" 1;
+
+.material-symbols-fill {
+  /* The FILL setting to 1 makes the icons solid. */
+  font-variation-settings:
+    "FILL" 1,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 24 !important;
 }
 
 /* Soft cards on a tinted page. One blue and one red, always with white
