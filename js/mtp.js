@@ -300,6 +300,7 @@ export class Mtp {
     this.epOut = 0;
     this.pktIn = 512;
     this.pktOut = 512;
+    this.lock = new AbortController(); // aborted to release the tab lock, see open()
   }
 
   supports(op) {
@@ -322,7 +323,23 @@ export class Mtp {
       );
     this.iface = found.iface;
 
-    await retryWhileBusy(() => this.dev.claimInterface(this.iface.interfaceNumber));
+    // Each tab holds a Web Lock per phone while it has the phone claimed, so a
+    // failed claim can tell when another tab or window of this page holds it.
+    const name = `phone ${this.dev.serialNumber}`;
+    try {
+      await retryWhileBusy(() => this.dev.claimInterface(this.iface.interfaceNumber));
+    } catch (e) {
+      const { held } = await navigator.locks.query();
+      if (held.some((l) => l.name === name))
+        throw new Error(
+          "The phone is already connected in another tab or window. Close it, then click Choose phone.",
+        );
+      throw e;
+    }
+    const { signal } = this.lock;
+    navigator.locks
+      .request(name, { signal }, () => new Promise((r) => signal.addEventListener("abort", r)))
+      .catch(() => {});
     if (found.alt.alternateSetting !== 0) {
       await this.dev.selectAlternateInterface(
         this.iface.interfaceNumber,
@@ -360,6 +377,7 @@ export class Mtp {
   // so just drop the USB handle; the next open() tolerates the stale session.
   release() {
     this.session = 0;
+    this.lock.abort();
     return this.dev.close().catch(() => {});
   }
 
@@ -374,6 +392,7 @@ export class Mtp {
       await this.dev.close();
     } catch {}
     this.session = 0;
+    this.lock.abort();
   }
 
   // An MTP interface is two bulk endpoints plus one interrupt endpoint

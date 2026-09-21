@@ -1567,7 +1567,7 @@ function advise(err) {
   if (/claim/i.test(msg))
     return (
       "Something else is holding the phone. Quit Preview, Photos and Image " +
-      "Capture, close any other tab with this page open, and quit Android " +
+      "Capture, close any other tab or window with this page open, and quit Android " +
       "File Transfer, OpenMTP or adb. Then unplug and replug the cable and " +
       "click Choose phone."
     );
