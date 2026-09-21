@@ -1,0 +1,22 @@
+{
+  "name": "Droid File Transfer",
+  "short_name": "Droid File Transfer",
+  "description": "Copy files between Mac and Android phone over USB in Chrome. Nothing to install, no files uploaded. An Android File Transfer replacement.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "white",
+  "theme_color": "black",
+  "icons": [
+    {
+      "src": "/img/pwa-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/img/pwa-icon-512x512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

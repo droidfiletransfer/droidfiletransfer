@@ -1,0 +1,27 @@
+{
+  // This task uses Prettier CLI instead of the VSCode Prettier extension to format files.
+  // To bind it to Shift+Alt+F (replacing the default "Format Document" command):
+  // Open: Cmd+Shift+P > "Preferences: Open Keyboard Shortcuts (JSON)" and add:
+  /*
+  {
+    "args": "Format with Prettier CLI",
+    "command": "workbench.action.tasks.runTask",
+    "key": "shift+alt+f",
+    "when": "editorTextFocus"
+  }
+  */
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Format with Prettier CLI",
+      "type": "shell",
+      "command": "npx prettier --write \"${file}\"",
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared",
+        "showReuseMessage": false
+      },
+      "problemMatcher": []
+    }
+  ]
+}

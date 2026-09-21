@@ -1,0 +1,160 @@
+<!doctype html>
+<!-- Copyright (C) 2026 Aron Sommer. See LICENSE file for full license details. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-C5EW4RQCCR"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+
+      gtag("config", "G-C5EW4RQCCR");
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Droid File Transfer: Android File Transfer for Mac</title>
+    <meta
+      name="description"
+      content="Copy files between Mac and Android phone over USB in Chrome. Nothing to install, no files uploaded. An Android File Transfer replacement."
+    />
+    <link rel="canonical" href="https://www.droidfiletransfer.com/" />
+
+    <link rel="icon" href="/img/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png" />
+
+    <link rel="manifest" href="/manifest.json" />
+
+    <link rel="stylesheet" href="/style.css?v=__BUILD_TIMESTAMP__" />
+  </head>
+  <body data-nosnippet>
+    <div class="shell">
+      <header class="top">
+        <span class="app-title">Droid File Transfer</span>
+        <a
+          class="gh"
+          href="https://github.com/droidfiletransfer/droidfiletransfer"
+          target="_blank"
+          rel="noopener"
+        >
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path
+              d="M6.766 11.328c-2.063-.25-3.516-1.734-3.516-3.656 0-.781.281-1.625.75-2.188-.203-.515-.172-1.609.063-2.062.625-.078 1.468.25 1.968.703.594-.187 1.219-.281 1.985-.281.765 0 1.39.094 1.953.265.484-.437 1.344-.765 1.969-.687.218.422.25 1.515.046 2.047.5.593.766 1.39.766 2.203 0 1.922-1.453 3.375-3.547 3.64.531.344.89 1.094.89 1.954v1.625c0 .468.391.734.86.547C13.781 14.359 16 11.53 16 8.03 16 3.61 12.406 0 7.984 0 3.563 0 0 3.61 0 8.031a7.88 7.88 0 0 0 5.172 7.422c.422.156.828-.125.828-.547v-1.25c-.219.094-.5.156-.75.156-1.031 0-1.64-.562-2.078-1.609-.172-.422-.36-.672-.719-.719-.187-.015-.25-.093-.25-.187 0-.188.313-.328.625-.328.453 0 .844.281 1.25.86.313.452.64.655 1.031.655s.641-.14 1-.5c.266-.265.47-.5.657-.656"
+            />
+          </svg>
+          Open Source
+        </a>
+        <span class="spacer"></span>
+        <a href="#" class="btn install" id="install-pwa-link" style="display: none">Install</a>
+        <button class="btn" id="help">Help</button>
+      </header>
+
+      <!-- disconnected -->
+      <div class="connect" id="connect">
+        <div class="connect-card">
+          <div class="hero">
+            <span class="material-symbols">computer</span>
+            <span class="material-symbols">cable</span>
+            <span class="material-symbols">android</span>
+          </div>
+          <h1>Copy files between your Mac and Android phone</h1>
+          <p>Over USB, right in Chrome.<br />Nothing to install, and no files are uploaded.</p>
+          <div class="notice" id="unsupported" hidden></div>
+          <ol class="steps" id="steps">
+            <li>
+              <span>1</span
+              ><span
+                >Plug the phone into this Mac with a USB cable, and quit Preview, Photos and Image
+                Capture &mdash; they can block the connection.</span
+              >
+            </li>
+            <li>
+              <span>2</span
+              ><span
+                >Unlock the phone, tap the <b>Charging this device via USB</b> notification, and
+                choose <b>File transfer</b>.</span
+              >
+            </li>
+            <li><span>3</span><span>Click below and pick your phone from the list.</span></li>
+            <li>
+              <span>4</span
+              ><span
+                >Choose the folder on this Mac the app may use. It is the only place on the Mac the
+                app can see, so files go to and from it. Chrome refuses the Documents, Desktop,
+                Downloads and home folders directly, so use or create a folder inside one, such as
+                <code>Documents/Phone</code>.</span
+              >
+            </li>
+          </ol>
+          <button class="btn primary big" id="pick">Choose phone</button>
+        </div>
+      </div>
+
+      <!-- connected -->
+      <div class="work" id="work" hidden>
+        <section class="pane" id="pane-mac" aria-label="Mac files"></section>
+        <div class="gutter">
+          <button class="go" id="copy" disabled>
+            <span class="go-arrow" id="copy-arrow"></span>
+            <span class="go-label">Copy</span>
+            <span class="go-count" id="copy-count"></span>
+          </button>
+        </div>
+        <section class="pane" id="pane-phone" aria-label="Phone files"></section>
+      </div>
+
+      <!-- Same six points as "Working with files" in README.md. -->
+      <dialog class="help-card" id="help-dialog">
+        <h2>Working with files</h2>
+        <ul>
+          <li>
+            <b>Select:</b> click a file or folder. ⌘-click adds one more, ⇧-click selects everything
+            between the last click and this one, ⌘A selects all. Esc, or a click on empty space,
+            clears the selection.
+          </li>
+          <li>
+            <b>Navigate:</b> ↑ and ↓ move the selection. Hold ⇧ while pressing them to select
+            several. → or a double-click opens a folder. ← goes up one folder, and so does clicking
+            a folder name in the path above the list.
+          </li>
+          <li>
+            <b>Copy:</b> select on one side, then click the button in the middle. Folders are copied
+            with everything inside, except Mac files and folders whose names start with a dot. Only
+            one side can have a selection, so the button always knows which way to copy.
+          </li>
+          <li>
+            <b>Delete:</b> the trash button at the top right of the pane, or the Delete key. It asks
+            first, skips the Trash and cannot be undone.
+          </li>
+          <li>
+            <b>Rename:</b> on the phone side, select one item and press Enter, or click the pencil
+            button. On the Mac, rename in Finder.
+          </li>
+          <li>
+            <b>New folder:</b> the folder button at the top right of each pane. The folder is
+            created in the folder that pane is showing.
+          </li>
+        </ul>
+        <button class="btn primary" id="help-close">Close</button>
+        <!-- The deploy workflow replaces this with the UTC time of the deploy. -->
+        <p class="version">Version __BUILD_TIMESTAMP__</p>
+      </dialog>
+
+      <div class="queue" id="queue" hidden>
+        <div class="q-top">
+          <span class="q-title">Transfers</span>
+          <span class="spacer"></span>
+          <span class="q-title" id="q-sum"></span>
+          <button class="btn danger" id="q-stop" hidden>Stop</button>
+          <button class="btn" id="q-clear" disabled>Clear</button>
+        </div>
+        <div class="q-body" id="q-body"></div>
+      </div>
+    </div>
+
+    <script src="/js/pwa.js?v=__BUILD_TIMESTAMP__"></script>
+    <script type="module" src="/js/app.js?v=__BUILD_TIMESTAMP__"></script>
+  </body>
+</html>
