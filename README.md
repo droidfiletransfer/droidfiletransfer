@@ -37,8 +37,8 @@ The **Help** button at the top right of the app shows this list too.
 - **Navigate**: ↑ and ↓ move the selection. Hold ⇧ while pressing them to select
   several. → or a double-click opens a folder. ← goes up one folder, and so
   does clicking a folder name in the path above the list.
-- **Copy**: select on one side, then click the button in the middle. Folders
-  are copied with everything inside, except Mac files and folders whose names
+- **Copy**: select on one side, then click the button in the middle or press
+  C. Folders are copied with everything inside, except Mac files and folders whose names
   start with a dot. Only one side can have a selection, so the button always
   knows which way to copy.
 - **Delete**: the trash button at the top right of the pane, or the Delete

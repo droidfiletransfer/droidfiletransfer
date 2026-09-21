@@ -683,7 +683,7 @@ function updateArrows() {
     : noDest
       ? "Choose a Mac folder first"
       : dir
-        ? `Copy to ${dir.to === "phone" ? "phone" : "Mac"}`
+        ? `Copy to ${dir.to === "phone" ? "phone" : "Mac"} (C)`
         : "Select files to copy";
   btn.querySelector(".go-label").textContent = busy ? "Copying" : "Copy";
   // Empty rather than hidden: the rows keep their height so the label
@@ -1628,6 +1628,11 @@ document.addEventListener("keydown", (e) => {
     if (!side) return;
     e.preventDefault(); // otherwise the browser selects the page text
     selectAll(side);
+    return;
+  }
+  // A disabled button ignores click(), so this obeys the button's own state.
+  if (e.key.toLowerCase() === "c" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    $("copy").click();
     return;
   }
   if (e.key === "Escape") {
