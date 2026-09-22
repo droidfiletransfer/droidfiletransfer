@@ -1568,8 +1568,8 @@ function advise(err) {
     return (
       "Something else is holding the phone. Quit Preview, Photos and Image " +
       "Capture, close any other tab or window with this page open, and quit Android " +
-      "File Transfer, OpenMTP or adb. Then unplug and replug the cable and " +
-      "click Choose phone."
+      "File Transfer, OpenMTP or adb. On Linux, eject the phone in Files. Then " +
+      "unplug and replug the cable and click Choose phone."
     );
   if (err?.name === "NetworkError" || /disconnect|no device|device unavailable/i.test(msg))
     return "The phone was disconnected. Check the cable, then click Choose phone.";
@@ -1695,21 +1695,32 @@ $("q-body").addEventListener(
 );
 new ResizeObserver(throttledDraw).observe($("q-body"));
 
-initPwaInstall();
 initServiceWorker();
 
-// A browser that cannot run the app gets the notice instead of the steps.
-const unsupported = !navigator.usb
-  ? "This browser has no WebUSB.\nUse Chrome."
-  : !window.showDirectoryPicker
-    ? "This browser cannot open local folders.\nUse Chrome."
-    : null;
-if (unsupported) {
-  $("unsupported").textContent = unsupported;
+// Uncomment to see why a browser is unsupported.
+// console.log({
+//   secure: isSecureContext,
+//   usb: !!navigator.usb,
+//   folders: !!window.showDirectoryPicker,
+//   platform: navigator.userAgentData?.platform,
+// });
+
+// Only Chromium on macOS or Linux runs the app: it needs WebUSB and folder
+// access (Brave turns the latter off), and on Windows the OS driver owns the
+// phone. userAgentData exists only in Chromium, so Safari, Firefox and every
+// iOS browser fail too.
+const supported =
+  navigator.usb &&
+  window.showDirectoryPicker &&
+  ["macOS", "Linux"].includes(navigator.userAgentData?.platform);
+if (!supported) {
+  $("unsupported").textContent = "This browser is not supported.\nUse Chrome on a Mac.";
   $("unsupported").hidden = false;
   $("steps").hidden = true;
   $("pick").hidden = true;
+  $("help").hidden = true;
 } else {
+  initPwaInstall();
   // getDevices() returns devices this origin was already granted [WebUSB], so
   // a phone from a previous visit reconnects without a prompt.
   navigator.usb.getDevices().then((ds) => {
