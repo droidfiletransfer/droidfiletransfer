@@ -543,16 +543,6 @@ function wire(side, items) {
         }
         renameSelection();
       }
-      if (e.key === "Delete" || e.key === "Backspace") {
-        e.preventDefault();
-        if (!p.sel.has(name)) {
-          p.sel.clear();
-          p.sel.add(name);
-          clearOther(side);
-          render(side);
-        }
-        deleteSelection(side);
-      }
     };
   });
 
@@ -1638,6 +1628,10 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     const side = focusedSide();
     if (side) clearSelection(side);
+  }
+  if (e.key === "Delete" || e.key === "Backspace") {
+    const side = focusedSide();
+    if (side) deleteSelection(side);
   }
   if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
     const side = focusedSide();
