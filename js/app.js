@@ -218,7 +218,7 @@ function setEntries(p, entries) {
 }
 
 // Picks up changes made outside the app when the window regains focus.
-// Renders only if the listing changed, so the scroll position survives.
+// Renders only if the listing changed, so the keyboard focus survives.
 async function recheck(side) {
   const p = S[side];
   // A phone listing would queue behind a running transfer, so skip it then.
@@ -385,6 +385,8 @@ function render(side) {
     totalBytes && fmtSize(totalBytes),
   ]);
 
+  // Rebuilding the list resets its scroll, so carry it over.
+  const scroll = p.el.querySelector(".list")?.scrollTop;
   p.el.innerHTML = `
     <div class="pane-top">
       <div class="pane-label">${icon(p.icon)}<span class="pane-name" ${p.tip ? `title="${esc(p.tip)}"` : ""}>${esc(p.label)}</span>
@@ -411,6 +413,7 @@ function render(side) {
           : ""
       }
     </div>`;
+  if (scroll) p.el.querySelector(".list").scrollTop = scroll;
 
   wire(side, items);
   updateArrows();
