@@ -267,12 +267,6 @@ button {
   color: var(--text);
   font-weight: 600;
 }
-.help-card .version {
-  margin: 12px 0 0;
-  text-align: center;
-  font-size: var(--font-small);
-  color: var(--text-3);
-}
 
 /* connect */
 .connect {
@@ -294,10 +288,10 @@ button {
   flex: 0 1 12dvh;
 }
 .connect-card {
-  /* Auto margins centre the card, and drop to zero when it is taller
-     than the window, so it starts at the top and scrolls instead of
-     being cut off at both ends. */
-  margin: auto 0;
+  /* The auto margin above, with the one below the version line, centres the
+     pair, and both drop to zero when they are taller than the window, so
+     they start at the top and scroll instead of being cut off at both ends. */
+  margin: auto 0 0;
   max-width: 480px;
   width: 100%;
   text-align: center;
@@ -309,6 +303,17 @@ button {
   border-radius: 28px;
   box-shadow: var(--shadow);
   padding: 24px 32px;
+}
+/* The build, shown under the start card and in the help card, because
+   neither place alone always exists: an unsupported browser has no Help
+   button, and a connected phone hides the start card. Under the start card
+   the bottom auto margin is the card's other half, together centring the
+   pair; in the help card's block flow it is simply zero. */
+.version {
+  margin: 12px 0 auto;
+  text-align: center;
+  font-size: var(--font-small);
+  color: var(--text-3);
 }
 /* The start screen mark: the Mac and the phone the two panes show, with
    the USB cable between them. */
