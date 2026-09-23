@@ -303,13 +303,10 @@ function mtpEndpoints(alt) {
 const usedConfig = (device) =>
   device.configuration ?? device.configurations.find((c) => c.configurationValue === 1);
 
-// Descriptors are readable without opening the device, so the app can skip a
-// device it was granted but cannot use -- a hub, a network adapter -- instead
-// of opening it and failing. requestDevice() filters the chooser itself, but
-// getDevices() and the connect event report every granted device. Only the
-// used configuration counts: observed on a USB Ethernet adapter, an unused
-// configuration held a vendor-specific bulk interface that looks exactly like
-// the old MTP one.
+// Whether a granted device can be used, read from its descriptors without
+// opening it: getDevices() and the connect event report every granted device,
+// while requestDevice() filters the chooser itself. Observed: a USB Ethernet
+// adapter carried a vendor-specific bulk interface in an unused configuration.
 export const offersMtp = (device) =>
   !!usedConfig(device)?.interfaces.some((i) => i.alternates.some((alt) => mtpEndpoints(alt)));
 
@@ -340,10 +337,9 @@ export class Mtp {
       if (this.dev.configuration === null) await this.dev.selectConfiguration(1);
     });
 
-    // Only a device picked in the chooser reaches this: the automatic paths
-    // skip what offersMtp() rejects. The chooser lists whatever matches
-    // USB_FILTERS, hubs and network adapters included, so name the device --
-    // phone advice alone reads as nonsense for a LAN adapter.
+    // Only a device picked in the chooser reaches this, and the chooser lists
+    // hubs and adapters too, so name it: phone advice alone reads as nonsense
+    // for a LAN adapter.
     const found = this._findInterface();
     if (!found)
       throw new Error(

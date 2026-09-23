@@ -851,7 +851,7 @@ async function startCopy(from, to) {
 
   // Flatten folders into one task per file before copying anything. Copying a
   // folder as a single task meant one unreadable file failed the whole tree,
-  // abandoned every file after it, and reported it under the folder's name —
+  // abandoned every file after it, and reported it under the folder's name,
   // which is exactly how a half-finished copy looks finished.
   batchTo = to;
   expanding = true;
@@ -1428,12 +1428,11 @@ async function connect() {
     if (e.name !== "NotFoundError") fail("Could not open the device chooser", e);
     return;
   }
-  await attach(device, true);
+  await attach(device);
 }
 
-// A connection attempt takes seconds, so the button carries it and takes no
-// clicks meanwhile. The automatic attempts need this as much as a click does:
-// without it the connect screen looks idle while one runs.
+// An attempt takes seconds, so the button carries it and takes no clicks
+// meanwhile: an automatic one would leave the connect screen looking idle.
 function pickBusy(on) {
   const btn = $("pick");
   btn.disabled = on;
@@ -1448,13 +1447,11 @@ let attaching = false; // true while a connection attempt runs
 // answers within a second.
 const OPEN_TIMEOUT = 5000;
 
-// `manual` marks a click on Choose phone: it reports failures, while the
-// automatic attempts stay quiet and just leave the connect screen up. Only one
-// attempt runs at a time -- closing the device under a running one cancels its
-// transfer and strands the phone's responder mid-transaction, which only a
-// replug clears. Every transfer is bounded by a timeout, so an attempt always
-// ends and frees the button.
-async function attach(device, manual = false) {
+// Every failure is reported, whether a click or the app started the attempt: a
+// silent one leaves the connect screen up with no reason why. Only one attempt
+// runs at a time, since closing the device under a running one cancels its
+// transfer and strands the phone's responder until a replug.
+async function attach(device) {
   if (mtp) return;
   if (attaching) {
     console.warn("attach ignored: a connection attempt is already running");
@@ -1520,9 +1517,9 @@ async function attach(device, manual = false) {
 
     // Only restore silently. showDirectoryPicker() throws without transient
     // user activation [FSA], which an automatic reconnect does not have, and
-    // which the manual path cannot count on either: a click counts for only a
-    // few seconds, and the device chooser and OpenSession come first. The
-    // pane's own "Choose folder" button is a real click, and works.
+    // which a click cannot guarantee either: it counts for only a few seconds,
+    // and the device chooser and OpenSession come first. The pane's own
+    // "Choose folder" button is a real click, and works.
     if (!S.mac.root) await restoreMacFolder();
     await refresh("mac");
     await refresh("phone");
@@ -1533,8 +1530,7 @@ async function attach(device, manual = false) {
     // and leave every later connection attempt blocked.
     await m.release();
     mtp = null;
-    if (manual) fail("Could not connect to the phone", e);
-    else console.warn("automatic reconnect failed:", e.message);
+    fail("Could not connect to the phone", e);
   } finally {
     attaching = false;
     pickBusy(false);
@@ -1566,13 +1562,15 @@ async function disconnect() {
 function advise(err) {
   const msg = err?.message || String(err);
 
+  // The remedy has to be read at a glance, so each platform gets only its own.
+  // Another tab of this page has its own message, from the Web Lock in open().
   if (/claim/i.test(msg))
-    return (
-      "Something else is holding the phone. Quit Preview, Photos and Image " +
-      "Capture, close any other tab or window with this page open, and quit Android " +
-      "File Transfer, OpenMTP or adb. On Linux, eject the phone in Files. Then " +
-      "unplug and replug the cable and click Choose phone."
-    );
+    return navigator.userAgentData?.platform === "Linux"
+      ? "Another app is using the phone. Eject it in Files, quit whatever opened it, then click " +
+          "Choose phone. If nothing is open, unplug and replug the cable."
+      : "Another app is using the phone. Quit Image Capture, Photos, Preview, Android File " +
+          "Transfer, OpenMTP, Google Drive or Dropbox, then click Choose phone. If none are open, " +
+          "unplug and replug the cable.";
   if (err?.name === "NetworkError" || /disconnect|no device|device unavailable/i.test(msg))
     return "The phone was disconnected. Check the cable, then click Choose phone.";
   if (err?.name === "QuotaExceededError") return "This Mac is out of disk space.";
@@ -1736,10 +1734,8 @@ if (!supported) {
   navigator.usb.addEventListener("disconnect", (e) => {
     if (mtp && e.device === mtp.dev) disconnect();
   });
-  // A replug, a USB-mode switch and a phone reboot all re-enumerate the
-  // device, so the grant from the last visit lets the app take it back on its
-  // own. Devices that offer no file transfer are skipped, and attach() ignores
-  // the event while a phone is connected.
+  // A replug or a USB-mode switch re-enumerates the device, so the grant from
+  // the last visit lets the app take it back on its own.
   navigator.usb.addEventListener("connect", (e) => {
     if (offersMtp(e.device)) attach(e.device);
   });
