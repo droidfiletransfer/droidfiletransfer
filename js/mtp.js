@@ -340,11 +340,16 @@ export class Mtp {
       if (this.dev.configuration === null) await this.dev.selectConfiguration(1);
     });
 
+    // Only a device picked in the chooser reaches this: the automatic paths
+    // skip what offersMtp() rejects. The chooser lists whatever matches
+    // USB_FILTERS, hubs and network adapters included, so name the device --
+    // phone advice alone reads as nonsense for a LAN adapter.
     const found = this._findInterface();
     if (!found)
       throw new Error(
-        "This device offers no file transfer. Unlock the phone and choose File transfer in " +
-          "its USB notification, then click Choose phone.",
+        `${this.dev.productName || "That device"} offers no file transfer. Pick your phone in ` +
+          "the list instead, and if it is not there, unlock it and choose File transfer in its " +
+          "USB notification.",
       );
     this.iface = found.iface;
 
