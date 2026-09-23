@@ -1101,7 +1101,7 @@ async function pump() {
         await new Promise((r) => setTimeout(r, 250 * task.tries));
       } else {
         task.state = "fail";
-        task.error = e?.message || String(e);
+        task.error = advise(e); // read later as text, where the MTP code is gone
         failed.push(task);
       }
     }
