@@ -288,6 +288,31 @@ export const USB_FILTERS = [
   { classCode: 0x06 },
 ];
 
+// The bulk pair of an MTP interface, or null: the classes are the two in
+// USB_FILTERS, and MTP needs a bulk endpoint in each direction.
+function mtpEndpoints(alt) {
+  const vendorMtp = alt.interfaceClass === 0xff && alt.interfaceSubclass === 0xff;
+  if (!vendorMtp && alt.interfaceClass !== 0x06) return null;
+  const epIn = alt.endpoints.find((e) => e.direction === "in" && e.type === "bulk");
+  const epOut = alt.endpoints.find((e) => e.direction === "out" && e.type === "bulk");
+  return epIn && epOut ? { epIn, epOut } : null;
+}
+
+// The configuration open() works in: the one the device is already in, or
+// configuration 1, which open() selects when it is in none.
+const usedConfig = (device) =>
+  device.configuration ?? device.configurations.find((c) => c.configurationValue === 1);
+
+// Descriptors are readable without opening the device, so the app can skip a
+// device it was granted but cannot use -- a hub, a network adapter -- instead
+// of opening it and failing. requestDevice() filters the chooser itself, but
+// getDevices() and the connect event report every granted device. Only the
+// used configuration counts: observed on a USB Ethernet adapter, an unused
+// configuration held a vendor-specific bulk interface that looks exactly like
+// the old MTP one.
+export const offersMtp = (device) =>
+  !!usedConfig(device)?.interfaces.some((i) => i.alternates.some((alt) => mtpEndpoints(alt)));
+
 export class Mtp {
   constructor(device) {
     this.dev = device;
@@ -400,13 +425,8 @@ export class Mtp {
   _findInterface() {
     for (const iface of this.dev.configuration.interfaces) {
       for (const alt of iface.alternates) {
-        const vendorMtp = alt.interfaceClass === 0xff && alt.interfaceSubclass === 0xff;
-        const stillImage = alt.interfaceClass === 0x06;
-        if (!vendorMtp && !stillImage) continue;
-
-        const epIn = alt.endpoints.find((e) => e.direction === "in" && e.type === "bulk");
-        const epOut = alt.endpoints.find((e) => e.direction === "out" && e.type === "bulk");
-        if (epIn && epOut) return { iface, alt, epIn, epOut };
+        const eps = mtpEndpoints(alt);
+        if (eps) return { iface, alt, ...eps };
       }
     }
     return null;

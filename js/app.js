@@ -1,6 +1,13 @@
 // Copyright (C) 2026 Aron Sommer. See LICENSE file for full license details.
 
-import { Mtp, OP, STALLED, USB_FILTERS, ROOT_PARENT } from "./mtp.js?v=__BUILD_TIMESTAMP__";
+import {
+  Mtp,
+  OP,
+  STALLED,
+  USB_FILTERS,
+  ROOT_PARENT,
+  offersMtp,
+} from "./mtp.js?v=__BUILD_TIMESTAMP__";
 
 // Comments cite these sources by tag; "Observed" marks behaviour seen while
 // testing with real phones, not read from a source.
@@ -1723,16 +1730,19 @@ if (!supported) {
   // getDevices() returns devices this origin was already granted [WebUSB], so
   // a phone from a previous visit reconnects without a prompt.
   navigator.usb.getDevices().then((ds) => {
-    if (ds.length) attach(ds[0]);
+    const phone = ds.find((d) => offersMtp(d));
+    if (phone) attach(phone);
   });
   navigator.usb.addEventListener("disconnect", (e) => {
     if (mtp && e.device === mtp.dev) disconnect();
   });
   // A replug, a USB-mode switch and a phone reboot all re-enumerate the
   // device, so the grant from the last visit lets the app take it back on its
-  // own. attach() ignores the event while a phone is connected, and stays
-  // quiet when the device turns out to offer no file transfer.
-  navigator.usb.addEventListener("connect", (e) => attach(e.device));
+  // own. Devices that offer no file transfer are skipped, and attach() ignores
+  // the event while a phone is connected.
+  navigator.usb.addEventListener("connect", (e) => {
+    if (offersMtp(e.device)) attach(e.device);
+  });
   // Release the interface when the page goes away, or a reload leaves the
   // device claimed and the next load cannot take it.
   addEventListener("pagehide", () => {
