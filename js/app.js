@@ -1469,8 +1469,8 @@ async function attach(device) {
           () =>
             reject(
               new Error(
-                "The phone did not respond. Unplug and replug the cable, unlock the " +
-                  "phone, choose File transfer in its USB notification, then click Choose phone.",
+                "The phone did not respond. Unplug and replug the cable, unlock the phone, " +
+                  "then choose File transfer in its USB notification.",
               ),
             ),
           OPEN_TIMEOUT,
@@ -1490,8 +1490,8 @@ async function attach(device) {
     }
     if (!ids.length)
       throw new Error(
-        "The phone is connected but shows no storage. Unlock it, and in its USB " +
-          "notification switch to Charging and back to File transfer, then click Choose phone.",
+        "The phone is connected but shows no storage. Unlock it, then switch its USB " +
+          "notification to Charging and back to File transfer.",
       );
     storage = await m.getStorageInfo(ids[0]);
 
@@ -1530,7 +1530,7 @@ async function attach(device) {
     // and leave every later connection attempt blocked.
     await m.release();
     mtp = null;
-    fail("Could not connect to the phone", e);
+    fail("Could not connect to the phone", e, e?.heldByOther ? () => attach(device) : null);
   } finally {
     attaching = false;
     pickBusy(false);
@@ -1566,13 +1566,13 @@ function advise(err) {
   // Another tab of this page has its own message, from the Web Lock in open().
   if (/claim/i.test(msg))
     return navigator.userAgentData?.platform === "Linux"
-      ? "Another app is using the phone. Eject it in Files, quit whatever opened it, then click " +
-          "Choose phone. If nothing is open, unplug and replug the cable."
+      ? "Another app is using the phone. Eject it in Files, quit whatever opened it, then try " +
+          "again. If nothing is open, unplug and replug the cable."
       : "Another app is using the phone. Quit Image Capture, Photos, Preview, Android File " +
-          "Transfer, OpenMTP, Google Drive or Dropbox, then click Choose phone. If none are open, " +
-          "unplug and replug the cable.";
+          "Transfer, OpenMTP, Google Drive or Dropbox, then try again. If none are open, unplug " +
+          "and replug the cable.";
   if (err?.name === "NetworkError" || /disconnect|no device|device unavailable/i.test(msg))
-    return "The phone was disconnected. Check the cable, then click Choose phone.";
+    return "The phone was disconnected. Check the cable.";
   if (err?.name === "QuotaExceededError") return "This Mac is out of disk space.";
   if (err?.name === "NotAllowedError")
     return "Access to that folder was withdrawn. Choose the folder again.";
@@ -1605,14 +1605,24 @@ function clearToast() {
   document.querySelector(".toast")?.remove();
 }
 
-function fail(what, err) {
+// `retry` adds a Try again button, which takes the phone again without the
+// device chooser that Choose phone opens.
+function fail(what, err, retry) {
   console.error(what, err);
   clearToast();
   const detail = advise(err);
   const el = document.createElement("div");
   el.className = "toast";
-  el.innerHTML = `${icon(ICON.warn)}<p><b>${esc(what)}</b>${esc(detail)}</p><button aria-label="Dismiss">${icon(ICON.close)}</button>`;
-  el.querySelector("button").onclick = () => el.remove();
+  el.innerHTML =
+    `${icon(ICON.warn)}<p><b>${esc(what)}</b>${esc(detail)}</p>` +
+    (retry ? `<button class="btn again">Try again</button>` : "") +
+    `<button class="close" aria-label="Dismiss">${icon(ICON.close)}</button>`;
+  el.querySelector(".close").onclick = () => el.remove();
+  if (retry)
+    el.querySelector(".again").onclick = () => {
+      el.remove();
+      retry();
+    };
   document.body.append(el); // stays until dismissed or replaced
 }
 

@@ -355,12 +355,17 @@ export class Mtp {
     try {
       await retryWhileBusy(() => this.dev.claimInterface(this.iface.interfaceNumber));
     } catch (e) {
+      if (!/claim/i.test(e.message)) throw e;
       const { held } = await navigator.locks.query();
-      if (held.some((l) => l.name === name))
-        throw new Error(
-          "The phone is already connected in another tab or window. Close it, then click Choose phone.",
-        );
-      throw e;
+      // heldByOther marks the one failure a retry can fix: the device stays
+      // the same, so taking it again works once the holder lets go.
+      const inUse = new Error(
+        held.some((l) => l.name === name)
+          ? "The phone is already connected in another tab or window. Close it, then try again."
+          : e.message,
+      );
+      inUse.heldByOther = true;
+      throw inUse;
     }
     const { signal } = this.lock;
     navigator.locks
@@ -904,8 +909,8 @@ const CHUNK = 512 * 1024; // bulk transfer size, a multiple of the 512 and 1024 
 // responder mid-file, short enough that a stall surfaces as an error.
 const IO_TIMEOUT = 20000;
 export const STALLED =
-  "The phone stopped responding. Unplug and replug the cable, choose File transfer in its " +
-  "USB notification, then click Choose phone.";
+  "The phone stopped responding. Unplug and replug the cable, then choose File transfer in " +
+  "its USB notification.";
 
 // A reload can start claiming before the previous page's close() has
 // finished, and Chrome rejects overlapping device-state changes with "An

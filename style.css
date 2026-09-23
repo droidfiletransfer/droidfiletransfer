@@ -914,7 +914,7 @@ button {
   font-weight: 600;
   margin-bottom: 2px;
 }
-.toast button {
+.toast .close {
   background: none;
   border: 0;
   border-radius: 999px;
@@ -930,8 +930,13 @@ button {
   display: grid;
   place-items: center;
 }
-.toast button .material-symbols {
+.toast .close .material-symbols {
   font-size: var(--icon);
+}
+/* The standard .btn, in the toast's own colours. */
+.toast .again {
+  background: var(--on-bad);
+  color: var(--bad);
 }
 
 button:focus-visible,
