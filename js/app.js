@@ -1726,6 +1726,11 @@ if (!supported) {
   navigator.usb.addEventListener("disconnect", (e) => {
     if (mtp && e.device === mtp.dev) disconnect();
   });
+  // A replug, a USB-mode switch and a phone reboot all re-enumerate the
+  // device, so the grant from the last visit lets the app take it back on its
+  // own. attach() ignores the event while a phone is connected, and stays
+  // quiet when the device turns out to offer no file transfer.
+  navigator.usb.addEventListener("connect", (e) => attach(e.device));
   // Release the interface when the page goes away, or a reload leaves the
   // device claimed and the next load cannot take it.
   addEventListener("pagehide", () => {
