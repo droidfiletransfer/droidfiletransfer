@@ -1421,19 +1421,19 @@ async function connect() {
     if (e.name !== "NotFoundError") fail("Could not open the device chooser", e);
     return;
   }
-  // The attempt can take seconds; show that the click was taken.
-  const btn = $("pick");
-  btn.disabled = true;
-  btn.textContent = "Connecting…";
-  try {
-    await attach(device, true);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Choose phone";
-  }
+  await attach(device, true);
 }
 
-let attaching = null; // the Mtp being opened, if any
+// A connection attempt takes seconds, so the button carries it and takes no
+// clicks meanwhile. The automatic attempts need this as much as a click does:
+// without it the connect screen looks idle while one runs.
+function pickBusy(on) {
+  const btn = $("pick");
+  btn.disabled = on;
+  btn.textContent = on ? "Connecting…" : "Choose phone";
+}
+
+let attaching = false; // true while a connection attempt runs
 
 // WebUSB transfers never time out on their own. A phone that is locked or in
 // the wrong USB mode can accept the claim and then never answer, which would
@@ -1441,21 +1441,21 @@ let attaching = null; // the Mtp being opened, if any
 // answers within a second.
 const OPEN_TIMEOUT = 5000;
 
-// `manual` marks a click on Choose phone: it supersedes a stalled automatic
-// attempt, and reports failures. The automatic one on page load stays quiet
-// and just leaves the connect screen up.
+// `manual` marks a click on Choose phone: it reports failures, while the
+// automatic attempts stay quiet and just leave the connect screen up. Only one
+// attempt runs at a time -- closing the device under a running one cancels its
+// transfer and strands the phone's responder mid-transaction, which only a
+// replug clears. Every transfer is bounded by a timeout, so an attempt always
+// ends and frees the button.
 async function attach(device, manual = false) {
   if (mtp) return;
   if (attaching) {
-    if (!manual) {
-      console.warn("attach ignored: a connection attempt is already running");
-      return;
-    }
-    await attaching.release();
-    attaching = null;
+    console.warn("attach ignored: a connection attempt is already running");
+    return;
   }
   const m = new Mtp(device);
-  attaching = m;
+  attaching = true;
+  pickBusy(true);
   let timer;
   try {
     const info = await Promise.race([
@@ -1505,6 +1505,7 @@ async function attach(device, manual = false) {
       .filter(Boolean)
       .join("\n");
 
+    clearToast(); // a failed earlier attempt no longer applies once connected
     $("connect").hidden = true;
     $("work").hidden = false;
     $("queue").hidden = false;
@@ -1528,7 +1529,8 @@ async function attach(device, manual = false) {
     if (manual) fail("Could not connect to the phone", e);
     else console.warn("automatic reconnect failed:", e.message);
   } finally {
-    if (attaching === m) attaching = null;
+    attaching = false;
+    pickBusy(false);
   }
 }
 
