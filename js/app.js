@@ -1728,7 +1728,7 @@ const supported =
   window.showDirectoryPicker &&
   ["macOS", "Linux"].includes(navigator.userAgentData?.platform);
 if (!supported) {
-  $("unsupported").textContent = "This browser is not supported.\nUse Chrome on a Mac.";
+  $("unsupported").textContent = "Only works in Chrome on Mac or Linux.";
   $("unsupported").hidden = false;
   $("steps").hidden = true;
   $("pick").hidden = true;
