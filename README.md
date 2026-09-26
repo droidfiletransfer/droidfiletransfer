@@ -11,8 +11,11 @@ Copy files between a Mac and an Android phone over USB, in the browser.
 Nothing to install, no files uploaded anywhere. A replacement for Google's
 discontinued Android File Transfer.
 
-Tested in Chrome, which also offers to install it as an app. Other browsers
-are untested.
+Tested in Chrome on macOS and Linux. Chrome also offers to install it as an
+app. Other browsers are untested.
+
+Windows is not supported: its MTP driver owns the phone, so Chrome cannot
+claim it without replacing the driver with WinUSB.
 
 ## Use it
 
