@@ -1569,8 +1569,8 @@ function advise(err) {
       ? "Another app is using the phone. Eject it in Files, quit whatever opened it, then try " +
           "again. If nothing is open, unplug and replug the cable."
       : "Another app is using the phone. Quit Image Capture, Photos, Preview, Android File " +
-          "Transfer, OpenMTP, Google Drive or Dropbox, then try again. If none are open, unplug " +
-          "and replug the cable.";
+          "Transfer, OpenMTP, Google Drive or Dropbox, or click Disconnect in this app in " +
+          "another browser, then try again. If none are open, unplug and replug the cable.";
   if (err?.name === "NetworkError" || /disconnect|no device|device unavailable/i.test(msg))
     return "The phone was disconnected. Check the cable.";
   if (err?.name === "QuotaExceededError") return "This Mac is out of disk space.";
@@ -1720,15 +1720,17 @@ initServiceWorker();
 // });
 
 // Only Chromium on macOS or Linux runs the app: it needs WebUSB and folder
-// access (Brave turns the latter off), and on Windows the OS driver owns the
-// phone. userAgentData exists only in Chromium, so Safari, Firefox and every
-// iOS browser fail too.
-const supported =
-  navigator.usb &&
-  window.showDirectoryPicker &&
-  ["macOS", "Linux"].includes(navigator.userAgentData?.platform);
+// access (Brave turns the latter off by default), and on Windows the OS driver
+// owns the phone. userAgentData exists only in Chromium, so Safari, Firefox and
+// every iOS browser fail too.
+const platformOk = ["macOS", "Linux"].includes(navigator.userAgentData?.platform);
+const supported = navigator.usb && window.showDirectoryPicker && platformOk;
 if (!supported) {
-  $("unsupported").textContent = "Only works in Chrome on Mac or Linux.";
+  // Brave has folder access behind a flag, so it is the only thing missing.
+  $("unsupported").textContent =
+    navigator.brave && navigator.usb && platformOk
+      ? "Enable File System Access API in brave://flags, then relaunch Brave."
+      : "Only works in Chrome on Mac or Linux.";
   $("unsupported").hidden = false;
   $("steps").hidden = true;
   $("pick").hidden = true;

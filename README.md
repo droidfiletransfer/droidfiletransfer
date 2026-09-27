@@ -11,11 +11,19 @@ Copy files between a Mac and an Android phone over USB, in the browser.
 Nothing to install, no files uploaded anywhere. A replacement for Google's
 discontinued Android File Transfer.
 
-Tested in Chrome on macOS and Linux. Chrome also offers to install it as an
-app. Other browsers are untested.
+Tested and working:
+
+- **Chrome** on macOS and Linux. Chrome also offers to install it as an app.
+- **Brave** on macOS and Linux, once **File System Access API** is enabled in
+  `brave://flags`.
+
+Safari and Firefox cannot work: they have no WebUSB. Other browsers are
+untested.
 
 Windows is not supported: its MTP driver owns the phone, so Chrome cannot
-claim it without replacing the driver with WinUSB.
+claim it. Replacing that driver with WinUSB makes it work (tested in a Windows
+11 VM), but the app still blocks Windows, because that setup is too much for
+most users.
 
 ## Use it
 
@@ -113,7 +121,8 @@ responder handles one transaction at a time.
   File transfer. After a cable pulled mid-copy the phone can come back with no
   storage, and replugging does not always restore it; the switch does.
 - Quit Preview, Photos and Image Capture. Quit Android File Transfer, OpenMTP
-  and `adb` too: only one process can claim the interface.
+  and `adb` too: only one process can claim the interface. The app open in
+  another browser holds it as well, so click **Disconnect** there first.
 - `chrome://device-log` shows why a claim failed. To see which process holds
   the interface:
   ```sh
