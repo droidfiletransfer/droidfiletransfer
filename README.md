@@ -33,7 +33,9 @@ most users.
    the phone.
 2. Unlock the phone, tap the **Charging this device via USB** notification and
    choose **File transfer**.
-3. Click **Choose phone** and pick it from Chrome's list.
+3. Click **Choose phone** and pick it from Chrome's list. Chrome remembers it,
+   so next time the app connects on its own. To forget it, remove it in
+   `chrome://settings/content/usbDevices`.
 4. Choose the folder on the Mac the app may use. Files are copied to and from
    it, and it is remembered for next time as long as Chrome keeps the
    permission. Chrome refuses the Documents, Desktop, Downloads and home
