@@ -11,6 +11,8 @@ Copy files between a Mac and an Android phone over USB, in the browser.
 Nothing to install, no files uploaded anywhere. A replacement for Google's
 discontinued Android File Transfer.
 
+Listed in the [Project Fugu API Showcase](https://googlechromelabs.github.io/fugu-showcase/data/#droidfiletransfer.com).
+
 Tested and working:
 
 - **Chrome** on macOS and Linux. Chrome also offers to install it as an app.
