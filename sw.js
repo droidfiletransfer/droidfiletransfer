@@ -3,7 +3,8 @@
 // The deploy workflow replaces this with the UTC time of the deploy, which both
 // renames the cache and changes this file, the one thing a browser re-checks.
 const VERSION = "__BUILD_TIMESTAMP__";
-const CACHE = `droidfiletransfer-${VERSION}`;
+const PREFIX = "droidfiletransfer-";
+const CACHE = PREFIX + VERSION;
 
 // Everything the page asks for from this origin, so nothing is missing with
 // no network. The ?v= URLs must be the ones index.html asks for, or the cache
@@ -36,12 +37,17 @@ self.addEventListener("install", (e) => {
 });
 
 // Every older deploy's cache goes, then this worker takes over the open pages.
+// Caches are shared by the whole origin, so only this app's are touched.
 self.addEventListener("activate", (e) => {
   e.waitUntil(
     caches
       .keys()
       .then((keys) =>
-        Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))),
+        Promise.all(
+          keys
+            .filter((key) => key.startsWith(PREFIX) && key !== CACHE)
+            .map((key) => caches.delete(key)),
+        ),
       )
       .then(() => self.clients.claim()),
   );
@@ -60,14 +66,17 @@ function keep(e, key, res) {
 }
 
 self.addEventListener("fetch", (e) => {
-  if (e.request.method !== "GET" || new URL(e.request.url).origin !== location.origin) return;
+  const url = new URL(e.request.url);
+  if (e.request.method !== "GET" || url.origin !== location.origin) return;
 
   // The page names the ?v= of the deploy it belongs to, so it comes from the
   // network whenever there is one; the cached copy is the offline fallback.
+  // Another file opened directly is never stored in the page's place.
   if (e.request.mode === "navigate") {
+    const isPage = url.pathname === "/";
     e.respondWith(
       fetch(fresh(e.request))
-        .then((res) => keep(e, "/", res))
+        .then((res) => (isPage ? keep(e, "/", res) : res))
         .catch(() => caches.match("/").then((hit) => hit || Response.error())),
     );
     return;
