@@ -257,8 +257,8 @@ window.addEventListener("focus", () => {
 /* render                                                              */
 /* ------------------------------------------------------------------ */
 
-const byName = (a, b) =>
-  a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" });
+const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
+const byName = (a, b) => collator.compare(a.name, b.name);
 
 function sorted(p) {
   const items = [...p.entries];
@@ -326,6 +326,26 @@ function syncTools(side) {
 // transfer and leave the pane on "Reading…" until it finished. The Mac is local.
 const canBrowse = (side) => side === "mac" || !(running || expanding);
 
+// Left of the footer: what is selected, else what the folder holds.
+function paneSum(p) {
+  const line = (parts) => parts.filter(Boolean).join(" · ");
+  // Folders have no size here, so a total is shown only for a set of files.
+  const bytes = (list) =>
+    list.some((i) => i.isDir) ? 0 : list.reduce((a, b) => a + (b.size || 0), 0);
+  if (p.sel.size) {
+    const selBytes = bytes(p.entries.filter((i) => p.sel.has(i.name)));
+    return line([`${p.sel.size} selected`, selBytes && fmtSize(selBytes)]);
+  }
+  const nDirs = p.entries.filter((i) => i.isDir).length;
+  const nFiles = p.entries.length - nDirs;
+  const totalBytes = bytes(p.entries);
+  return line([
+    nDirs && `${nDirs} folder${nDirs > 1 ? "s" : ""}`,
+    nFiles && `${nFiles} file${nFiles > 1 ? "s" : ""}`,
+    totalBytes && fmtSize(totalBytes),
+  ]);
+}
+
 function render(side) {
   const p = S[side];
   const items = sorted(p);
@@ -377,21 +397,6 @@ function render(side) {
         ? `<button class="btn" id="change-dir">Change folder</button>`
         : `<button class="btn" data-act="disconnect">Disconnect</button>`);
 
-  const nDirs = items.filter((i) => i.isDir).length;
-  const nFiles = items.length - nDirs;
-  // Folders have no size here, so a total is shown only for a set of files.
-  const bytes = (list) =>
-    list.some((i) => i.isDir) ? 0 : list.reduce((a, b) => a + (b.size || 0), 0);
-  const selBytes = bytes(items.filter((i) => p.sel.has(i.name)));
-  const totalBytes = bytes(items);
-  const line = (parts) => parts.filter(Boolean).join(" · ");
-
-  const counts = line([
-    nDirs && `${nDirs} folder${nDirs > 1 ? "s" : ""}`,
-    nFiles && `${nFiles} file${nFiles > 1 ? "s" : ""}`,
-    totalBytes && fmtSize(totalBytes),
-  ]);
-
   // Rebuilding the list resets its scroll, so carry it over.
   const scroll = p.el.querySelector(".list")?.scrollTop;
   p.el.innerHTML = `
@@ -412,7 +417,7 @@ function render(side) {
     </div>
     <div class="list" tabindex="-1">${body}</div>
     <div class="pane-foot">
-      ${p.sel.size ? line([`${p.sel.size} selected`, selBytes && fmtSize(selBytes)]) : counts}
+      <span class="pane-sum">${paneSum(p)}</span>
       <span class="spacer"></span>
       ${
         side === "phone" && storage
@@ -479,10 +484,10 @@ function wire(side, items) {
       refresh(side, true);
     };
 
-  p.el.querySelectorAll(".row").forEach((r) => {
-    const name = r.dataset.n;
-    const item = items.find((i) => i.name === name);
-    if (!item) return;
+  // Rows are in the order of items.
+  p.el.querySelectorAll(".row").forEach((r, at) => {
+    const item = items[at];
+    const name = item.name;
 
     const enter = () => {
       if (!canBrowse(side)) return;
@@ -498,8 +503,7 @@ function wire(side, items) {
         p.sel.has(name) ? p.sel.delete(name) : p.sel.add(name);
         p.anchor = name;
       } else if (e.shiftKey && p.anchor != null) {
-        const a = items.findIndex((i) => i.name === p.anchor),
-          b = items.findIndex((i) => i.name === name);
+        const a = items.findIndex((i) => i.name === p.anchor);
         if (a < 0) {
           p.sel.clear();
           p.sel.add(name);
@@ -508,14 +512,14 @@ function wire(side, items) {
           // Shift replaces the selection with the range, as Finder does;
           // the anchor stays put so you can keep extending from it.
           p.sel.clear();
-          items.slice(Math.min(a, b), Math.max(a, b) + 1).forEach((i) => p.sel.add(i.name));
+          items.slice(Math.min(a, at), Math.max(a, at) + 1).forEach((i) => p.sel.add(i.name));
         }
       } else {
         p.sel.clear();
         p.sel.add(name);
         p.anchor = name;
       }
-      render(side);
+      syncSelection(side);
       focusRow(side, name);
     };
     r.ondblclick = () => {
@@ -524,8 +528,7 @@ function wire(side, items) {
     r.onkeydown = (e) => {
       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
         e.preventDefault();
-        const i = items.findIndex((x) => x.name === name);
-        const j = Math.max(0, Math.min(items.length - 1, i + (e.key === "ArrowDown" ? 1 : -1)));
+        const j = Math.max(0, Math.min(items.length - 1, at + (e.key === "ArrowDown" ? 1 : -1)));
         const target = items[j].name;
 
         if (e.shiftKey) {
@@ -539,7 +542,7 @@ function wire(side, items) {
           p.anchor = target;
         }
         clearOther(side);
-        render(side);
+        syncSelection(side);
         focusRow(side, target);
         return;
       }
@@ -549,7 +552,7 @@ function wire(side, items) {
           p.sel = new Set([name]);
           p.anchor = name;
           clearOther(side);
-          render(side);
+          syncSelection(side);
         }
         renameSelection();
       }
@@ -568,9 +571,7 @@ function wire(side, items) {
   list.onclick = (e) => {
     if (e.target !== list && !e.target.classList.contains("empty")) return;
     list.focus({ preventScroll: true });
-    if (!p.sel.size) return;
     clearSelection(side);
-    S[side].el.querySelector(".list").focus({ preventScroll: true });
   };
 }
 
@@ -631,7 +632,7 @@ function landOn(side, name) {
     p.sel = new Set([name]);
     p.anchor = name;
     clearOther(side);
-    render(side);
+    syncSelection(side);
     focusRow(side, name);
   } else {
     p.el.querySelector(".list").focus({ preventScroll: true });
@@ -644,7 +645,16 @@ function selectAll(side) {
   p.sel = new Set(p.entries.map((i) => i.name));
   p.anchor = null;
   clearOther(side);
-  render(side);
+  syncSelection(side);
+}
+
+// Shows a changed selection without rebuilding the pane, which is slow in a
+// large folder.
+function syncSelection(side) {
+  const p = S[side];
+  for (const r of p.el.querySelectorAll(".row")) r.classList.toggle("on", p.sel.has(r.dataset.n));
+  p.el.querySelector(".pane-sum").textContent = paneSum(p);
+  updateArrows();
 }
 
 function focusRow(side, name) {
@@ -665,7 +675,7 @@ function clearSelection(side) {
   if (!p.sel.size) return;
   p.sel.clear();
   p.anchor = null;
-  render(side);
+  syncSelection(side);
 }
 
 function updateArrows() {
@@ -843,7 +853,9 @@ async function startCopy(from, to) {
   clearToast();
   const items = src.entries.filter((i) => names.includes(i.name));
   src.sel.clear();
-  render(from);
+  syncSelection(from);
+  // Off the row, which would keep its focus ring without its highlight.
+  src.el.querySelector(".list").focus({ preventScroll: true });
   clearFinished();
 
   // Snapshot the destination so later navigation can't redirect a running copy.
@@ -1647,7 +1659,11 @@ document.addEventListener("keydown", (e) => {
   }
   if (e.key === "Escape") {
     const side = focusedSide();
-    if (side) clearSelection(side);
+    if (side) {
+      clearSelection(side);
+      // Off the row, which would keep its focus ring without its highlight.
+      S[side].el.querySelector(".list").focus({ preventScroll: true });
+    }
   }
   if (e.key === "Delete" || e.key === "Backspace") {
     const side = focusedSide();
@@ -1661,10 +1677,9 @@ document.addEventListener("keydown", (e) => {
     else closeFolder(side);
   }
 });
-// Clicking outside both panes clears the selection, except on controls. A
-// detached target was re-rendered by a pane's own click handler.
+// Clicking outside both panes clears the selection, except on controls.
 document.addEventListener("click", (e) => {
-  if (!e.target.isConnected || e.target.closest(".pane, button, a, dialog")) return;
+  if (e.target.closest(".pane, button, a, dialog")) return;
   clearSelection("mac");
   clearSelection("phone");
 });

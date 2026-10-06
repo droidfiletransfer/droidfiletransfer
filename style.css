@@ -540,7 +540,8 @@ button {
 
 .list {
   outline: none;
-  flex: 1 1 auto;
+  /* Basis 0: with auto, a change of the footer text lays out every row again. */
+  flex: 1 1 0;
   overflow-y: auto;
   min-height: 0;
   padding: 4px 8px;
