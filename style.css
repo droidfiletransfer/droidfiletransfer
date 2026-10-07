@@ -158,7 +158,7 @@ body {
   font-size: var(--font-title);
   font-weight: 600;
   line-height: 22px;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.25px;
   white-space: nowrap;
   padding-left: 8px;
 }
@@ -248,7 +248,7 @@ button {
   margin: 0 0 12px;
   font-size: var(--font-heading);
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.5px;
   text-align: center;
 }
 .help-card .btn {
@@ -330,7 +330,7 @@ button {
   font-size: var(--font-heading);
   font-weight: 700;
   margin: 0;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.5px;
   line-height: 1.15;
   text-wrap: balance;
 }
@@ -444,7 +444,7 @@ button {
   min-width: 0;
   font-size: var(--font-title);
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.25px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -768,7 +768,7 @@ button {
 .q-title {
   font-size: var(--font-title);
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.25px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
